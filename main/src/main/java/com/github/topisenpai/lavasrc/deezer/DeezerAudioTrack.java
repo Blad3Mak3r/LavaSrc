@@ -43,7 +43,7 @@ public class DeezerAudioTrack extends DelegatedAudioTrack {
         var getSessionID = new HttpPost(DeezerAudioSourceManager.PRIVATE_API_BASE + "?method=deezer.ping&input=3&api_version=1.0&api_token=");
         var json = HttpClientTools.fetchResponseAsJson(this.sourceManager.getHttpInterface(), getSessionID);
         if (json.get("data").index(0).get("errors").index(0).get("code").asLong(0) != 0) {
-            throw new IllegalStateException("Failed to get session ID");
+            throw DeezerException.wrap("Failed to get session ID", json);
         }
         var sessionID = json.get("results").get("SESSION").text();
 
@@ -51,7 +51,7 @@ public class DeezerAudioTrack extends DelegatedAudioTrack {
         getUserToken.setHeader("Cookie", "sid=" + sessionID);
         json = HttpClientTools.fetchResponseAsJson(this.sourceManager.getHttpInterface(), getUserToken);
         if (json.get("data").index(0).get("errors").index(0).get("code").asLong(0) != 0) {
-            throw new IllegalStateException("Failed to get user token");
+            throw DeezerException.wrap("Failed to get user token", json);
         }
         var userLicenseToken = json.get("results").get("USER").get("OPTIONS").get("license_token").text();
         var apiToken = json.get("results").get("checkForm").text();
@@ -60,7 +60,7 @@ public class DeezerAudioTrack extends DelegatedAudioTrack {
         getTrackToken.setEntity(new StringEntity("{\"sng_id\":\"" + this.trackInfo.identifier + "\"}", ContentType.APPLICATION_JSON));
         json = HttpClientTools.fetchResponseAsJson(this.sourceManager.getHttpInterface(), getTrackToken);
         if (json.get("data").index(0).get("errors").index(0).get("code").asLong(0) != 0) {
-            throw new IllegalStateException("Failed to get track token");
+            throw DeezerException.wrap("Failed to get track token", json);
         }
         var trackToken = json.get("results").get("TRACK_TOKEN").text();
 
@@ -68,7 +68,7 @@ public class DeezerAudioTrack extends DelegatedAudioTrack {
         getMediaURL.setEntity(new StringEntity("{\"license_token\":\"" + userLicenseToken + "\",\"media\": [{\"type\": \"FULL\",\"formats\": [{\"cipher\": \"BF_CBC_STRIPE\", \"format\": \"MP3_128\"}]}],\"track_tokens\": [\"" + trackToken + "\"]}", ContentType.APPLICATION_JSON));
         json = HttpClientTools.fetchResponseAsJson(this.sourceManager.getHttpInterface(), getMediaURL);
         if (json.get("data").index(0).get("errors").index(0).get("code").asLong(0) != 0) {
-            throw new IllegalStateException("Failed to get media URL");
+            throw DeezerException.wrap("Failed to get media URL", json);
         }
         return new URI(json.get("data").index(0).get("media").index(0).get("sources").index(0).get("url").text());
     }
